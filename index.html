@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Vòng Quay Bốc Thăm Thứ Tự Ngẫu Nhiên</title>
+  <title>Vòng Quay May Mắn</title>
   <!-- Thư viện SheetJS đọc file Excel -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
@@ -39,22 +39,17 @@
 
     header {
       text-align: center;
-      margin-bottom: 20px;
+      margin-bottom: 24px;
       width: 100%;
     }
 
     header h1 {
-      font-size: 24px;
+      font-size: 28px;
       text-transform: uppercase;
-      letter-spacing: 1px;
+      letter-spacing: 1.5px;
       color: var(--accent);
-      margin-bottom: 6px;
-      text-shadow: 0 0 12px rgba(245, 158, 11, 0.4);
-    }
-
-    header p {
-      color: #94a3b8;
-      font-size: 14px;
+      margin: 0;
+      text-shadow: 0 0 14px rgba(245, 158, 11, 0.45);
     }
 
     .app-layout {
@@ -232,7 +227,7 @@
       z-index: 10;
     }
 
-    /* Hộp điều khiển nhạc nền sôi động */
+    /* Hộp điều khiển nhạc nền */
     .music-box {
       width: 100%;
       background: #090d16;
@@ -470,8 +465,7 @@
 <body>
 
   <header>
-    <h1>Hệ Thống Bốc Thăm Thứ Tự Ngẫu Nhiên</h1>
-    <p>Quay số tự động 1 chạm - Kèm nhạc nền sôi động & chúc mừng</p>
+    <h1>VÒNG QUAY MAY MẮN</h1>
   </header>
 
   <div class="app-layout">
@@ -528,7 +522,7 @@
         </div>
       </div>
 
-      <!-- Thẻ Audio phát nhạc nền: Mặc định đọc file nhac_nen.mp3 cùng thư mục -->
+      <!-- Thẻ Audio phát nhạc nền: Đọc file nhac_nen.mp3 cùng thư mục -->
       <audio id="bgmAudio" loop preload="auto" src="nhac_nen.mp3"></audio>
 
       <div class="controls">
@@ -638,7 +632,6 @@
       musicStatusText.style.color = "#64748b";
     }
 
-    // Chọn file MP3 trực tiếp từ máy
     customAudioFile.addEventListener("change", function(e) {
       const file = e.target.files[0];
       if (file) {
@@ -706,13 +699,11 @@
       } catch (e) {}
     }
 
-    // Âm thanh vỗ tay và kèn chiến thắng tưng bừng khi xong 26 lớp
     function playGrandVictoryCelebration() {
       try {
         const ctx = getAudioContext();
         const start = ctx.currentTime;
 
-        // Giai điệu kèn chiến thắng
         const fanfareNotes = [
           { f: 392.00, d: 0.16, t: 0.00 },
           { f: 523.25, d: 0.16, t: 0.18 },
@@ -738,7 +729,6 @@
           osc.stop(start + note.t + note.d);
         });
 
-        // Tràng vỗ tay rộn rã
         const totalClaps = 65;
         for (let i = 0; i < totalClaps; i++) {
           const clapTime = start + 0.1 + (i * 0.05) + (Math.random() * 0.04);
@@ -966,11 +956,9 @@
         const sliceAngle = (Math.PI * 2) / total;
         const targetAngleNormalized = (Math.PI * 2) - (winningIndex * sliceAngle + sliceAngle / 2);
         
-        // Quay thêm 4 - 6 vòng để tạo đà quay kéo dài
         const extraRounds = 4 + Math.floor(Math.random() * 3);
         const targetAngle = currentAngle + extraRounds * Math.PI * 2 + (targetAngleNormalized - (currentAngle % (Math.PI * 2)));
 
-        // TĂNG THỜI GIAN QUAY LÊN 2600ms (2.6 giây) ĐỂ VÒNG QUAY CHẬM LẠI VÀ RÕ NÉT
         const duration = 2600;
         const startTime = performance.now();
         const startAngle = currentAngle;
@@ -980,11 +968,9 @@
           const elapsed = currentTime - startTime;
           const progress = Math.min(elapsed / duration, 1);
 
-          // Hàm giảm tốc Ease-Out Cubic mượt mà
           const easeOut = 1 - Math.pow(1 - progress, 3);
           currentAngle = startAngle + (targetAngle - startAngle) * easeOut;
 
-          // Tiếng bánh xe quét qua kim
           const currentSegment = Math.floor((currentAngle % (Math.PI * 2)) / sliceAngle);
           if (currentSegment !== lastTickSegment) {
             playTickSound();
@@ -1029,7 +1015,6 @@
 
         currentRank++;
 
-        // Nghỉ 0.55s giữa các lượt để người xem kịp nhìn rõ lớp vừa trúng
         await new Promise(r => setTimeout(r, 550));
         if (slot) slot.classList.remove("active-just-in");
 
@@ -1044,7 +1029,6 @@
       isRunning = false;
       isPaused = false;
 
-      // Giảm âm lượng nhạc nền từ từ khi kết thúc
       let fadeOut = setInterval(() => {
         if (bgmAudio.volume > 0.05) {
           bgmAudio.volume -= 0.05;
@@ -1063,7 +1047,6 @@
       resetBtn.disabled = false;
       applyBtn.disabled = false;
 
-      // Kích hoạt pháo tay và kèn chiến thắng
       playGrandVictoryCelebration();
     }
 
