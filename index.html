@@ -1,0 +1,1129 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Vòng Quay Bốc Thăm Thứ Tự Ngẫu Nhiên</title>
+  <!-- Thư viện SheetJS đọc file Excel -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <style>
+    :root {
+      --bg-dark: #090d16;
+      --panel-bg: #131b2e;
+      --accent: #f59e0b;
+      --accent-hover: #d97706;
+      --danger: #ef4444;
+      --success: #10b981;
+      --text: #f8fafc;
+      --border: #24324d;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 16px;
+      position: relative;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 20px;
+      width: 100%;
+    }
+
+    header h1 {
+      font-size: 24px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--accent);
+      margin-bottom: 6px;
+      text-shadow: 0 0 12px rgba(245, 158, 11, 0.4);
+    }
+
+    header p {
+      color: #94a3b8;
+      font-size: 14px;
+    }
+
+    .app-layout {
+      display: grid;
+      grid-template-columns: 310px 410px 1fr;
+      gap: 16px;
+      max-width: 1400px;
+      width: 100%;
+      align-items: start;
+    }
+
+    .card-panel {
+      background: var(--panel-bg);
+      border-radius: 14px;
+      padding: 16px;
+      border: 1px solid var(--border);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    }
+
+    .panel-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #cbd5e1;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* 1. Panel Admin & Cài đặt */
+    .admin-lock-banner {
+      background: #090d16;
+      border: 1px dashed #334155;
+      padding: 12px;
+      border-radius: 8px;
+      text-align: center;
+      margin-bottom: 12px;
+    }
+
+    .admin-lock-banner p {
+      font-size: 12px;
+      color: #94a3b8;
+      margin-bottom: 8px;
+    }
+
+    .btn-unlock {
+      background: #475569;
+      color: #fff;
+      padding: 7px 14px;
+      font-size: 12px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .btn-unlock:hover {
+      background: #64748b;
+    }
+
+    .admin-controls-area {
+      display: none;
+    }
+
+    .input-section textarea {
+      width: 100%;
+      height: 190px;
+      background: #090d16;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: #fff;
+      padding: 10px;
+      font-size: 13px;
+      resize: vertical;
+      margin-bottom: 10px;
+      line-height: 1.4;
+    }
+
+    .file-input-wrapper {
+      position: relative;
+      margin-bottom: 10px;
+    }
+
+    .file-input-wrapper input[type="file"] {
+      display: none;
+    }
+
+    .custom-file-btn {
+      display: block;
+      text-align: center;
+      background: #1e293b;
+      border: 1px dashed #64748b;
+      color: #94a3b8;
+      padding: 9px;
+      border-radius: 8px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .custom-file-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(245, 158, 11, 0.05);
+    }
+
+    .btn-apply {
+      width: 100%;
+      background: #3b82f6;
+      color: #fff;
+      padding: 9px;
+      border-radius: 8px;
+      font-weight: 700;
+      cursor: pointer;
+      border: none;
+      font-size: 13px;
+      margin-bottom: 6px;
+    }
+
+    .btn-apply:hover {
+      background: #2563eb;
+    }
+
+    .btn-lock {
+      width: 100%;
+      background: transparent;
+      border: 1px solid #475569;
+      color: #94a3b8;
+      padding: 6px;
+      border-radius: 6px;
+      font-size: 11px;
+      cursor: pointer;
+    }
+
+    .btn-lock:hover {
+      background: rgba(255,255,255,0.05);
+      color: #fff;
+    }
+
+    /* 2. Panel Vòng quay */
+    .wheel-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .wheel-wrapper {
+      position: relative;
+      width: 380px;
+      height: 380px;
+      margin-bottom: 12px;
+      max-width: 100%;
+    }
+
+    canvas {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      box-shadow: 0 0 25px rgba(0,0,0,0.7);
+    }
+
+    .pointer {
+      position: absolute;
+      top: 50%;
+      right: -8px;
+      transform: translateY(-50%);
+      width: 0;
+      height: 0;
+      border-top: 14px solid transparent;
+      border-bottom: 14px solid transparent;
+      border-right: 30px solid #ef4444;
+      filter: drop-shadow(-3px 0 5px rgba(0,0,0,0.8));
+      z-index: 10;
+    }
+
+    /* Hộp điều khiển nhạc nền sôi động */
+    .music-box {
+      width: 100%;
+      background: #090d16;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 8px 12px;
+      margin-bottom: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .music-box-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+      color: #cbd5e1;
+    }
+
+    .music-title {
+      font-weight: 600;
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .music-box-controls {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .music-vol-area {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: #94a3b8;
+    }
+
+    .music-vol-area input[type="range"] {
+      width: 75px;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+    .music-toggle-btn {
+      background: none;
+      border: none;
+      font-size: 16px;
+      cursor: pointer;
+      color: var(--accent);
+      padding: 0;
+    }
+
+    .custom-audio-upload {
+      font-size: 11px;
+      color: #64748b;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+
+    .custom-audio-upload:hover {
+      color: var(--accent);
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      width: 100%;
+    }
+
+    button {
+      border: none;
+      padding: 10px 18px;
+      font-size: 14px;
+      font-weight: 700;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      color: #fff;
+    }
+
+    button:hover:not(:disabled) {
+      filter: brightness(1.1);
+      transform: translateY(-1px);
+    }
+
+    button:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-spin {
+      background: var(--accent);
+      color: #0f172a;
+      box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+    }
+
+    .btn-pause {
+      background: var(--danger);
+    }
+
+    .btn-resume {
+      background: var(--success);
+    }
+
+    .btn-reset {
+      background: #475569;
+    }
+
+    /* 3. Panel Bảng kết quả */
+    .tables-container {
+      display: flex;
+      gap: 12px;
+    }
+
+    .column-box {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .column-header {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: #94a3b8;
+      text-align: center;
+      background: #090d16;
+      padding: 5px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+    }
+
+    .slot-item {
+      display: flex;
+      align-items: center;
+      background: #090d16;
+      padding: 5px 8px;
+      border-radius: 6px;
+      border: 1px dashed #334155;
+      font-size: 13px;
+      height: 35px;
+      transition: all 0.3s ease;
+    }
+
+    .slot-item .rank-badge {
+      font-weight: 700;
+      color: #64748b;
+      width: 28px;
+      font-size: 12px;
+    }
+
+    .slot-item .class-name {
+      font-weight: 600;
+      color: #475569;
+      flex: 1;
+      text-align: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .slot-item.filled {
+      border: 1px solid #10b981;
+      background: rgba(16, 185, 129, 0.12);
+    }
+
+    .slot-item.filled .rank-badge {
+      color: var(--accent);
+    }
+
+    .slot-item.filled .class-name {
+      color: #f8fafc;
+      font-size: 14px;
+    }
+
+    .slot-item.active-just-in {
+      animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+      background: rgba(245, 158, 11, 0.3);
+      border-color: var(--accent);
+    }
+
+    @keyframes popIn {
+      0% { transform: scale(0.9); }
+      50% { transform: scale(1.08); }
+      100% { transform: scale(1); }
+    }
+
+    @media (max-width: 1100px) {
+      .app-layout {
+        grid-template-columns: 1fr;
+        max-width: 480px;
+      }
+
+      .wheel-section {
+        order: 1;
+      }
+
+      .results-section {
+        order: 2;
+      }
+
+      .input-section {
+        order: 3;
+      }
+
+      .wheel-wrapper {
+        width: 300px;
+        height: 300px;
+      }
+
+      .pointer {
+        right: -6px;
+        border-top-width: 12px;
+        border-bottom-width: 12px;
+        border-right-width: 24px;
+      }
+
+      .controls button {
+        padding: 9px 14px;
+        font-size: 13px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Hệ Thống Bốc Thăm Thứ Tự Ngẫu Nhiên</h1>
+    <p>Quay số tự động 1 chạm - Kèm nhạc nền sôi động & chúc mừng</p>
+  </header>
+
+  <div class="app-layout">
+    <!-- CỘT 1: Quản lý danh sách -->
+    <div class="card-panel input-section">
+      <div class="panel-title">
+        <span>Cài Đặt Danh Sách</span>
+        <span id="inputCountText" style="font-size: 12px; color: #94a3b8;">26 mục</span>
+      </div>
+
+      <div class="admin-lock-banner" id="lockBanner">
+        <p>🔒 Danh sách được bảo vệ bởi Admin.</p>
+        <button class="btn-unlock" id="unlockBtn">MỞ KHÓA ADMIN</button>
+      </div>
+
+      <div class="admin-controls-area" id="adminArea">
+        <div class="file-input-wrapper">
+          <label for="excelFileInput" class="custom-file-btn" id="fileLabel">
+            📂 Chọn file Excel / CSV (.xlsx, .xls)
+          </label>
+          <input type="file" id="excelFileInput" accept=".xlsx, .xls, .csv, .txt" />
+        </div>
+
+        <textarea id="itemsInput" placeholder="Mỗi dòng là một tên..."></textarea>
+        
+        <button id="applyBtn" class="btn-apply">CẬP NHẬT VÀO VÒNG QUAY</button>
+        <button id="lockNowBtn" class="btn-lock">Khóa cài đặt lại</button>
+      </div>
+    </div>
+
+    <!-- CỘT 2: Vòng quay & nút bấm -->
+    <div class="card-panel wheel-section">
+      <div class="wheel-wrapper">
+        <canvas id="wheelCanvas" width="800" height="800"></canvas>
+        <div class="pointer"></div>
+      </div>
+
+      <!-- Hộp điều khiển nhạc nền -->
+      <div class="music-box">
+        <div class="music-box-top">
+          <div class="music-title">🎶 <span id="currentMusicLabel">Nhạc nền: Đang dùng file nhac_nen.mp3</span></div>
+          <label class="custom-audio-upload" title="Chọn file nhạc mp3 trên máy">
+            Chọn file MP3 trên máy
+            <input type="file" id="customAudioFile" accept="audio/*" style="display:none;" />
+          </label>
+        </div>
+        <div class="music-box-controls">
+          <div class="music-vol-area">
+            <button id="musicToggleBtn" class="music-toggle-btn" title="Bật/Tắt">🔊</button>
+            <span>Âm lượng:</span>
+            <input type="range" id="bgmVolume" min="0" max="1" step="0.05" value="0.6" />
+          </div>
+          <span id="musicStatusText" style="font-size:11px; color:#64748b;">Tự động phát khi quay</span>
+        </div>
+      </div>
+
+      <!-- Thẻ Audio phát nhạc nền: Mặc định đọc file nhac_nen.mp3 cùng thư mục -->
+      <audio id="bgmAudio" loop preload="auto" src="nhac_nen.mp3"></audio>
+
+      <div class="controls">
+        <button id="startBtn" class="btn-spin">QUAY</button>
+        <button id="pauseBtn" class="btn-pause" disabled>TẠM DỪNG</button>
+        <button id="resumeBtn" class="btn-resume" style="display: none;">TIẾP TỤC</button>
+        <button id="resetBtn" class="btn-reset" disabled>BẮT ĐẦU LẠI</button>
+      </div>
+    </div>
+
+    <!-- CỘT 3: Bảng kết quả chia 2 cột -->
+    <div class="card-panel results-section">
+      <div class="panel-title">
+        <span>Bảng Xếp Hạng Thứ Tự</span>
+        <span id="counterText" style="color: var(--accent);">Đã xếp: 0 / 26</span>
+      </div>
+      <div class="tables-container">
+        <div class="column-box" id="col1">
+          <div class="column-header" id="col1Title">Cột 1</div>
+        </div>
+        <div class="column-box" id="col2">
+          <div class="column-header" id="col2Title">Cột 2</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const ADMIN_PASSWORD = "admin";
+
+    const DEFAULT_ITEMS = [
+      "10A10", "10A11", "10A12", "10A13", "10A14", "10A15", "10A16", "10A17", "10A18", "10A19",
+      "11A8", "11A9", "11A10", "11A11", "11A12", "11A13", "11A14",
+      "12A10", "12A11", "12A12", "12A13", "12A14", "12A15", "12A16", "12A17", "12A18"
+    ];
+
+    const SLICE_COLORS = [
+      "#2563eb", "#dc2626", "#059669", "#d97706", "#7c3aed",
+      "#db2777", "#0891b2", "#ea580c", "#0d9488", "#4f46e5"
+    ];
+
+    let baseItems = [...DEFAULT_ITEMS];
+    let currentPool = [...DEFAULT_ITEMS];
+    let currentRank = 1;
+    let isRunning = false;
+    let isPaused = false;
+    let currentAngle = 0;
+
+    const canvas = document.getElementById("wheelCanvas");
+    const ctx = canvas.getContext("2d");
+    const itemsInput = document.getElementById("itemsInput");
+    const excelFileInput = document.getElementById("excelFileInput");
+    const fileLabel = document.getElementById("fileLabel");
+    const applyBtn = document.getElementById("applyBtn");
+    const inputCountText = document.getElementById("inputCountText");
+
+    const unlockBtn = document.getElementById("unlockBtn");
+    const lockNowBtn = document.getElementById("lockNowBtn");
+    const lockBanner = document.getElementById("lockBanner");
+    const adminArea = document.getElementById("adminArea");
+
+    const startBtn = document.getElementById("startBtn");
+    const pauseBtn = document.getElementById("pauseBtn");
+    const resumeBtn = document.getElementById("resumeBtn");
+    const resetBtn = document.getElementById("resetBtn");
+
+    const bgmAudio = document.getElementById("bgmAudio");
+    const musicToggleBtn = document.getElementById("musicToggleBtn");
+    const bgmVolumeSlider = document.getElementById("bgmVolume");
+    const customAudioFile = document.getElementById("customAudioFile");
+    const currentMusicLabel = document.getElementById("currentMusicLabel");
+    const musicStatusText = document.getElementById("musicStatusText");
+
+    const col1 = document.getElementById("col1");
+    const col2 = document.getElementById("col2");
+    const col1Title = document.getElementById("col1Title");
+    const col2Title = document.getElementById("col2Title");
+    const counterText = document.getElementById("counterText");
+
+    itemsInput.value = DEFAULT_ITEMS.join("\n");
+
+    // ==========================================
+    // 1. ĐIỀU KHIỂN NHẠC NỀN
+    // ==========================================
+    bgmAudio.volume = parseFloat(bgmVolumeSlider.value);
+
+    function playBGM() {
+      bgmAudio.play().then(() => {
+        musicStatusText.textContent = "Đang phát 🎵";
+        musicStatusText.style.color = "#10b981";
+      }).catch(e => {
+        musicStatusText.textContent = "Chưa có file nhac_nen.mp3";
+        musicStatusText.style.color = "#ef4444";
+      });
+    }
+
+    function pauseBGM() {
+      bgmAudio.pause();
+      musicStatusText.textContent = "Tạm dừng";
+      musicStatusText.style.color = "#64748b";
+    }
+
+    function stopBGM() {
+      bgmAudio.pause();
+      bgmAudio.currentTime = 0;
+      musicStatusText.textContent = "Đã dừng";
+      musicStatusText.style.color = "#64748b";
+    }
+
+    // Chọn file MP3 trực tiếp từ máy
+    customAudioFile.addEventListener("change", function(e) {
+      const file = e.target.files[0];
+      if (file) {
+        bgmAudio.src = URL.createObjectURL(file);
+        currentMusicLabel.textContent = "Nhạc: " + file.name.substring(0, 20) + "..";
+        musicStatusText.textContent = "Đã nạp file!";
+        musicStatusText.style.color = "#10b981";
+      }
+    });
+
+    musicToggleBtn.addEventListener("click", () => {
+      bgmAudio.muted = !bgmAudio.muted;
+      musicToggleBtn.textContent = bgmAudio.muted ? "🔇" : "🔊";
+    });
+
+    bgmVolumeSlider.addEventListener("input", (e) => {
+      bgmAudio.volume = parseFloat(e.target.value);
+    });
+
+    // ==========================================
+    // 2. HIỆU ỨNG ÂM THANH KÈM THEO
+    // ==========================================
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    let audioCtx = null;
+
+    function getAudioContext() {
+      if (!audioCtx) audioCtx = new AudioCtx();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      return audioCtx;
+    }
+
+    function playTickSound() {
+      try {
+        const ctx = getAudioContext();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(800, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(300, ctx.currentTime + 0.04);
+        gain.gain.setValueAtTime(0.12, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.04);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.04);
+      } catch (e) {}
+    }
+
+    function playWinChordSound() {
+      try {
+        const ctx = getAudioContext();
+        const notes = [523.25, 659.25, 783.99, 1046.50];
+        notes.forEach((freq, idx) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = "triangle";
+          osc.frequency.setValueAtTime(freq, ctx.currentTime + idx * 0.04);
+          gain.gain.setValueAtTime(0.16, ctx.currentTime + idx * 0.04);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5 + idx * 0.04);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(ctx.currentTime + idx * 0.04);
+          osc.stop(ctx.currentTime + 0.55 + idx * 0.04);
+        });
+      } catch (e) {}
+    }
+
+    // Âm thanh vỗ tay và kèn chiến thắng tưng bừng khi xong 26 lớp
+    function playGrandVictoryCelebration() {
+      try {
+        const ctx = getAudioContext();
+        const start = ctx.currentTime;
+
+        // Giai điệu kèn chiến thắng
+        const fanfareNotes = [
+          { f: 392.00, d: 0.16, t: 0.00 },
+          { f: 523.25, d: 0.16, t: 0.18 },
+          { f: 659.25, d: 0.16, t: 0.36 },
+          { f: 783.99, d: 0.38, t: 0.54 },
+          { f: 659.25, d: 0.16, t: 0.95 },
+          { f: 1046.50, d: 0.90, t: 1.15 }
+        ];
+
+        fanfareNotes.forEach(note => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = "triangle";
+          osc.frequency.setValueAtTime(note.f, start + note.t);
+
+          gain.gain.setValueAtTime(0.26, start + note.t);
+          gain.gain.exponentialRampToValueAtTime(0.001, start + note.t + note.d);
+
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+
+          osc.start(start + note.t);
+          osc.stop(start + note.t + note.d);
+        });
+
+        // Tràng vỗ tay rộn rã
+        const totalClaps = 65;
+        for (let i = 0; i < totalClaps; i++) {
+          const clapTime = start + 0.1 + (i * 0.05) + (Math.random() * 0.04);
+          const bufferSize = ctx.sampleRate * 0.06;
+          const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+          const data = buffer.getChannelData(0);
+
+          for (let j = 0; j < bufferSize; j++) {
+            data[j] = (Math.random() * 2 - 1) * Math.exp(-j / (bufferSize * 0.3));
+          }
+
+          const noise = ctx.createBufferSource();
+          noise.buffer = buffer;
+
+          const filter = ctx.createBiquadFilter();
+          filter.type = "bandpass";
+          filter.frequency.value = 1100 + Math.random() * 400;
+
+          const gain = ctx.createGain();
+          gain.gain.setValueAtTime(0.22, clapTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, clapTime + 0.06);
+
+          noise.connect(filter);
+          filter.connect(gain);
+          gain.connect(ctx.destination);
+
+          noise.start(clapTime);
+        }
+      } catch (e) {}
+    }
+
+    // ==========================================
+    // 3. ADMIN VÀ NHẬP LIỆU EXCEL
+    // ==========================================
+    unlockBtn.addEventListener("click", () => {
+      const pass = prompt("Vui lòng nhập mật khẩu Admin:");
+      if (pass === null) return;
+      if (pass === ADMIN_PASSWORD) {
+        lockBanner.style.display = "none";
+        adminArea.style.display = "block";
+      } else {
+        alert("Mật khẩu không chính xác!");
+      }
+    });
+
+    lockNowBtn.addEventListener("click", () => {
+      adminArea.style.display = "none";
+      lockBanner.style.display = "block";
+    });
+
+    excelFileInput.addEventListener("change", function(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      fileLabel.textContent = `📄 Đã chọn: ${file.name}`;
+      const reader = new FileReader();
+
+      reader.onload = function(evt) {
+        try {
+          const data = new Uint8Array(evt.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const firstSheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[firstSheetName];
+          const json = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+          const parsed = [];
+          for (let row of json) {
+            if (row && row.length > 0 && row[0] !== undefined && row[0] !== null) {
+              const val = String(row[0]).trim();
+              if (val.length > 0) parsed.push(val);
+            }
+          }
+
+          if (parsed.length > 0) {
+            itemsInput.value = parsed.join("\n");
+            applyNewList();
+          } else {
+            alert("File không có dữ liệu ở cột đầu tiên!");
+          }
+        } catch (err) {
+          alert("Lỗi khi đọc file Excel!");
+        }
+      };
+
+      reader.readAsArrayBuffer(file);
+    });
+
+    function applyNewList() {
+      if (isRunning) return;
+      const lines = itemsInput.value.split("\n")
+        .map(s => s.trim())
+        .filter(s => s.length > 0);
+
+      if (lines.length < 2) {
+        alert("Danh sách phải có ít nhất 2 mục!");
+        return;
+      }
+
+      baseItems = [...lines];
+      inputCountText.textContent = `${baseItems.length} mục`;
+      resetAll();
+    }
+
+    applyBtn.addEventListener("click", applyNewList);
+
+    // ==========================================
+    // 4. BẢNG KẾT QUẢ & VẼ VÒNG QUAY
+    // ==========================================
+    function initSlots() {
+      col1.querySelectorAll(".slot-item").forEach(e => e.remove());
+      col2.querySelectorAll(".slot-item").forEach(e => e.remove());
+
+      const total = baseItems.length;
+      const mid = Math.ceil(total / 2);
+
+      col1Title.textContent = `Thứ tự 01 - ${mid < 10 ? '0' + mid : mid}`;
+      col2Title.textContent = `Thứ tự ${mid + 1 < 10 ? '0' + (mid + 1) : mid + 1} - ${total < 10 ? '0' + total : total}`;
+
+      for (let i = 1; i <= total; i++) {
+        const slot = document.createElement("div");
+        slot.className = "slot-item";
+        slot.id = `slot-${i}`;
+        slot.innerHTML = `
+          <span class="rank-badge">${i < 10 ? '0' + i : i}.</span>
+          <span class="class-name">Chờ quay...</span>
+        `;
+        if (i <= mid) {
+          col1.appendChild(slot);
+        } else {
+          col2.appendChild(slot);
+        }
+      }
+    }
+
+    function drawWheel() {
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
+      const radius = canvas.width / 2 - 12;
+      const total = currentPool.length;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      if (total === 0) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+        ctx.fillStyle = "#131b2e";
+        ctx.fill();
+        ctx.lineWidth = 6;
+        ctx.strokeStyle = "#10b981";
+        ctx.stroke();
+
+        ctx.fillStyle = "#10b981";
+        ctx.font = "bold 44px 'Segoe UI'";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText("HOÀN THÀNH!", centerX, centerY);
+        ctx.restore();
+        return;
+      }
+
+      const sliceAngle = (Math.PI * 2) / total;
+
+      let fontSize = 32;
+      if (total > 35) fontSize = 18;
+      else if (total > 20) fontSize = 24;
+      else if (total > 10) fontSize = 28;
+
+      for (let i = 0; i < total; i++) {
+        const start = currentAngle + i * sliceAngle;
+        const end = start + sliceAngle;
+
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY);
+        ctx.arc(centerX, centerY, radius, start, end);
+        ctx.closePath();
+        ctx.fillStyle = SLICE_COLORS[i % SLICE_COLORS.length];
+        ctx.fill();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = "#090d16";
+        ctx.stroke();
+
+        ctx.save();
+        ctx.translate(centerX, centerY);
+        ctx.rotate(start + sliceAngle / 2);
+        ctx.textAlign = "right";
+        ctx.textBaseline = "middle";
+        ctx.fillStyle = "#ffffff";
+        ctx.font = `bold ${fontSize}px 'Segoe UI'`;
+        ctx.shadowColor = "rgba(0,0,0,0.8)";
+        ctx.shadowBlur = 4;
+
+        let text = currentPool[i];
+        if (text.length > 15) text = text.substring(0, 13) + "..";
+
+        ctx.fillText(text, radius - 20, 0);
+        ctx.restore();
+      }
+
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, 38, 0, Math.PI * 2);
+      ctx.fillStyle = "#090d16";
+      ctx.fill();
+      ctx.lineWidth = 4;
+      ctx.strokeStyle = "#f59e0b";
+      ctx.stroke();
+    }
+
+    // ==========================================
+    // 5. TIẾN TRÌNH QUAY CHẬM LẠI & HỒI HỘP HƠN
+    // ==========================================
+    function spinOneTurn() {
+      return new Promise((resolve) => {
+        const total = currentPool.length;
+
+        if (total === 1) {
+          const selected = currentPool[0];
+          currentPool = [];
+          drawWheel();
+          resolve(selected);
+          return;
+        }
+
+        const winningIndex = Math.floor(Math.random() * total);
+        const sliceAngle = (Math.PI * 2) / total;
+        const targetAngleNormalized = (Math.PI * 2) - (winningIndex * sliceAngle + sliceAngle / 2);
+        
+        // Quay thêm 4 - 6 vòng để tạo đà quay kéo dài
+        const extraRounds = 4 + Math.floor(Math.random() * 3);
+        const targetAngle = currentAngle + extraRounds * Math.PI * 2 + (targetAngleNormalized - (currentAngle % (Math.PI * 2)));
+
+        // TĂNG THỜI GIAN QUAY LÊN 2600ms (2.6 giây) ĐỂ VÒNG QUAY CHẬM LẠI VÀ RÕ NÉT
+        const duration = 2600;
+        const startTime = performance.now();
+        const startAngle = currentAngle;
+        let lastTickSegment = -1;
+
+        function animate(currentTime) {
+          const elapsed = currentTime - startTime;
+          const progress = Math.min(elapsed / duration, 1);
+
+          // Hàm giảm tốc Ease-Out Cubic mượt mà
+          const easeOut = 1 - Math.pow(1 - progress, 3);
+          currentAngle = startAngle + (targetAngle - startAngle) * easeOut;
+
+          // Tiếng bánh xe quét qua kim
+          const currentSegment = Math.floor((currentAngle % (Math.PI * 2)) / sliceAngle);
+          if (currentSegment !== lastTickSegment) {
+            playTickSound();
+            lastTickSegment = currentSegment;
+          }
+
+          drawWheel();
+
+          if (progress < 1) {
+            requestAnimationFrame(animate);
+          } else {
+            const winner = currentPool[winningIndex];
+            currentPool.splice(winningIndex, 1);
+            currentAngle = currentAngle % (Math.PI * 2);
+            drawWheel();
+            resolve(winner);
+          }
+        }
+
+        requestAnimationFrame(animate);
+      });
+    }
+
+    async function runLoop() {
+      const totalCount = baseItems.length;
+
+      while (currentRank <= totalCount) {
+        if (isPaused) {
+          pauseBGM();
+          return;
+        }
+
+        const winner = await spinOneTurn();
+        playWinChordSound();
+
+        const slot = document.getElementById(`slot-${currentRank}`);
+        if (slot) {
+          slot.classList.add("filled", "active-just-in");
+          slot.querySelector(".class-name").textContent = winner;
+        }
+        counterText.textContent = `Đã xếp: ${currentRank} / ${totalCount}`;
+
+        currentRank++;
+
+        // Nghỉ 0.55s giữa các lượt để người xem kịp nhìn rõ lớp vừa trúng
+        await new Promise(r => setTimeout(r, 550));
+        if (slot) slot.classList.remove("active-just-in");
+
+        if (currentRank > totalCount) {
+          finishAll();
+          return;
+        }
+      }
+    }
+
+    function finishAll() {
+      isRunning = false;
+      isPaused = false;
+
+      // Giảm âm lượng nhạc nền từ từ khi kết thúc
+      let fadeOut = setInterval(() => {
+        if (bgmAudio.volume > 0.05) {
+          bgmAudio.volume -= 0.05;
+        } else {
+          clearInterval(fadeOut);
+          stopBGM();
+          bgmAudio.volume = parseFloat(bgmVolumeSlider.value);
+        }
+      }, 80);
+
+      startBtn.style.display = "inline-block";
+      startBtn.disabled = true;
+      pauseBtn.disabled = true;
+      pauseBtn.style.display = "inline-block";
+      resumeBtn.style.display = "none";
+      resetBtn.disabled = false;
+      applyBtn.disabled = false;
+
+      // Kích hoạt pháo tay và kèn chiến thắng
+      playGrandVictoryCelebration();
+    }
+
+    startBtn.addEventListener("click", () => {
+      getAudioContext();
+      isRunning = true;
+      isPaused = false;
+      startBtn.disabled = true;
+      pauseBtn.disabled = false;
+      resetBtn.disabled = true;
+      applyBtn.disabled = true;
+      playBGM();
+      runLoop();
+    });
+
+    pauseBtn.addEventListener("click", () => {
+      if (!isRunning) return;
+      isPaused = true;
+      pauseBGM();
+      pauseBtn.style.display = "none";
+      resumeBtn.style.display = "inline-block";
+      resetBtn.disabled = false;
+    });
+
+    resumeBtn.addEventListener("click", () => {
+      getAudioContext();
+      isPaused = false;
+      resumeBtn.style.display = "none";
+      pauseBtn.style.display = "inline-block";
+      pauseBtn.disabled = false;
+      resetBtn.disabled = true;
+      playBGM();
+      runLoop();
+    });
+
+    function resetAll() {
+      currentPool = [...baseItems];
+      currentRank = 1;
+      currentAngle = 0;
+      isRunning = false;
+      isPaused = false;
+      stopBGM();
+
+      startBtn.style.display = "inline-block";
+      startBtn.disabled = false;
+      pauseBtn.style.display = "inline-block";
+      pauseBtn.disabled = true;
+      resumeBtn.style.display = "none";
+      resetBtn.disabled = true;
+      applyBtn.disabled = false;
+
+      counterText.textContent = `Đã xếp: 0 / ${baseItems.length}`;
+      initSlots();
+      drawWheel();
+    }
+
+    resetBtn.addEventListener("click", resetAll);
+
+    initSlots();
+    drawWheel();
+  </script>
+</body>
+</html>
