@@ -39,7 +39,7 @@
 
     header {
       text-align: center;
-      margin-bottom: 24px;
+      margin-bottom: 20px;
       width: 100%;
     }
 
@@ -54,7 +54,7 @@
 
     .app-layout {
       display: grid;
-      grid-template-columns: 310px 410px 1fr;
+      grid-template-columns: 320px 410px 1fr;
       gap: 16px;
       max-width: 1400px;
       width: 100%;
@@ -81,7 +81,7 @@
       align-items: center;
     }
 
-    /* 1. Panel Admin & Cài đặt */
+    /* 1. Panel Cài đặt & Admin */
     .admin-lock-banner {
       background: #090d16;
       border: 1px dashed #334155;
@@ -116,9 +116,35 @@
       display: none;
     }
 
+    .pick-count-box {
+      background: #090d16;
+      border: 1px solid var(--border);
+      padding: 10px 12px;
+      border-radius: 8px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 13px;
+      color: #cbd5e1;
+    }
+
+    .pick-count-box input[type="number"] {
+      width: 70px;
+      background: #1e293b;
+      border: 1px solid var(--border);
+      color: var(--accent);
+      padding: 5px 8px;
+      border-radius: 6px;
+      font-weight: 700;
+      font-size: 14px;
+      text-align: center;
+      outline: none;
+    }
+
     .input-section textarea {
       width: 100%;
-      height: 190px;
+      height: 180px;
       background: #090d16;
       border: 1px solid var(--border);
       border-radius: 8px;
@@ -227,7 +253,7 @@
       z-index: 10;
     }
 
-    /* Hộp điều khiển nhạc nền */
+    /* Hộp nhạc */
     .music-box {
       width: 100%;
       background: #090d16;
@@ -469,11 +495,17 @@
   </header>
 
   <div class="app-layout">
-    <!-- CỘT 1: Quản lý danh sách -->
+    <!-- CỘT 1: Cài đặt danh sách & Số lượng chọn -->
     <div class="card-panel input-section">
       <div class="panel-title">
-        <span>Cài Đặt Danh Sách</span>
-        <span id="inputCountText" style="font-size: 12px; color: #94a3b8;">26 mục</span>
+        <span>Cài Đặt Bốc Thăm</span>
+        <span id="inputCountText" style="font-size: 12px; color: #94a3b8;">Tổng: 26 mục</span>
+      </div>
+
+      <!-- Ô chọn số lượng rút thăm -->
+      <div class="pick-count-box">
+        <span>Số lượng cần chọn:</span>
+        <input type="number" id="pickCountInput" min="1" max="26" value="26" title="Nhập số bạn muốn chọn" />
       </div>
 
       <div class="admin-lock-banner" id="lockBanner">
@@ -506,7 +538,7 @@
       <!-- Hộp điều khiển nhạc nền -->
       <div class="music-box">
         <div class="music-box-top">
-          <div class="music-title">🎶 <span id="currentMusicLabel">Nhạc nền: Đang dùng file nhac_nen.mp3</span></div>
+          <div class="music-title">🎶 <span id="currentMusicLabel">Nhạc nền: Đang dùng nhac_nen.mp3</span></div>
           <label class="custom-audio-upload" title="Chọn file nhạc mp3 trên máy">
             Chọn file MP3 trên máy
             <input type="file" id="customAudioFile" accept="audio/*" style="display:none;" />
@@ -522,7 +554,6 @@
         </div>
       </div>
 
-      <!-- Thẻ Audio phát nhạc nền: Đọc file nhac_nen.mp3 cùng thư mục -->
       <audio id="bgmAudio" loop preload="auto" src="nhac_nen.mp3"></audio>
 
       <div class="controls">
@@ -533,11 +564,11 @@
       </div>
     </div>
 
-    <!-- CỘT 3: Bảng kết quả chia 2 cột -->
+    <!-- CỘT 3: Bảng kết quả -->
     <div class="card-panel results-section">
       <div class="panel-title">
         <span>Bảng Xếp Hạng Thứ Tự</span>
-        <span id="counterText" style="color: var(--accent);">Đã xếp: 0 / 26</span>
+        <span id="counterText" style="color: var(--accent);">Đã chọn: 0 / 26</span>
       </div>
       <div class="tables-container">
         <div class="column-box" id="col1">
@@ -566,6 +597,7 @@
 
     let baseItems = [...DEFAULT_ITEMS];
     let currentPool = [...DEFAULT_ITEMS];
+    let totalToPick = DEFAULT_ITEMS.length; // Số lượng cần chọn
     let currentRank = 1;
     let isRunning = false;
     let isPaused = false;
@@ -574,6 +606,7 @@
     const canvas = document.getElementById("wheelCanvas");
     const ctx = canvas.getContext("2d");
     const itemsInput = document.getElementById("itemsInput");
+    const pickCountInput = document.getElementById("pickCountInput");
     const excelFileInput = document.getElementById("excelFileInput");
     const fileLabel = document.getElementById("fileLabel");
     const applyBtn = document.getElementById("applyBtn");
@@ -652,7 +685,7 @@
     });
 
     // ==========================================
-    // 2. HIỆU ỨNG ÂM THANH KÈM THEO
+    // 2. HIỆU ỨNG ÂM THANH
     // ==========================================
     const AudioCtx = window.AudioContext || window.webkitAudioContext;
     let audioCtx = null;
@@ -761,7 +794,7 @@
     }
 
     // ==========================================
-    // 3. ADMIN VÀ NHẬP LIỆU EXCEL
+    // 3. ADMIN VÀ NHẬP LIỆU
     // ==========================================
     unlockBtn.addEventListener("click", () => {
       const pass = prompt("Vui lòng nhập mật khẩu Admin:");
@@ -828,11 +861,27 @@
       }
 
       baseItems = [...lines];
-      inputCountText.textContent = `${baseItems.length} mục`;
+      inputCountText.textContent = `Tổng: ${baseItems.length} mục`;
+      
+      // Cập nhật giới hạn của ô nhập số lượng cần chọn
+      pickCountInput.max = baseItems.length;
+      if (parseInt(pickCountInput.value) > baseItems.length || parseInt(pickCountInput.value) <= 0) {
+        pickCountInput.value = baseItems.length;
+      }
       resetAll();
     }
 
     applyBtn.addEventListener("click", applyNewList);
+
+    // Khi người dùng thay đổi số lượng cần chọn
+    pickCountInput.addEventListener("change", () => {
+      if (isRunning) return;
+      let val = parseInt(pickCountInput.value);
+      if (isNaN(val) || val < 1) val = 1;
+      if (val > baseItems.length) val = baseItems.length;
+      pickCountInput.value = val;
+      resetAll();
+    });
 
     // ==========================================
     // 4. BẢNG KẾT QUẢ & VẼ VÒNG QUAY
@@ -841,13 +890,18 @@
       col1.querySelectorAll(".slot-item").forEach(e => e.remove());
       col2.querySelectorAll(".slot-item").forEach(e => e.remove());
 
-      const total = baseItems.length;
-      const mid = Math.ceil(total / 2);
+      totalToPick = parseInt(pickCountInput.value) || baseItems.length;
+      const mid = Math.ceil(totalToPick / 2);
 
-      col1Title.textContent = `Thứ tự 01 - ${mid < 10 ? '0' + mid : mid}`;
-      col2Title.textContent = `Thứ tự ${mid + 1 < 10 ? '0' + (mid + 1) : mid + 1} - ${total < 10 ? '0' + total : total}`;
+      if (totalToPick === 1) {
+        col1Title.textContent = `Vị trí 01`;
+        col2Title.textContent = `Trống`;
+      } else {
+        col1Title.textContent = `Thứ tự 01 - ${mid < 10 ? '0' + mid : mid}`;
+        col2Title.textContent = `Thứ tự ${mid + 1 < 10 ? '0' + (mid + 1) : mid + 1} - ${totalToPick < 10 ? '0' + totalToPick : totalToPick}`;
+      }
 
-      for (let i = 1; i <= total; i++) {
+      for (let i = 1; i <= totalToPick; i++) {
         const slot = document.createElement("div");
         slot.className = "slot-item";
         slot.id = `slot-${i}`;
@@ -871,7 +925,7 @@
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      if (total === 0) {
+      if (total === 0 || currentRank > totalToPick) {
         ctx.save();
         ctx.beginPath();
         ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
@@ -995,9 +1049,7 @@
     }
 
     async function runLoop() {
-      const totalCount = baseItems.length;
-
-      while (currentRank <= totalCount) {
+      while (currentRank <= totalToPick) {
         if (isPaused) {
           pauseBGM();
           return;
@@ -1011,14 +1063,15 @@
           slot.classList.add("filled", "active-just-in");
           slot.querySelector(".class-name").textContent = winner;
         }
-        counterText.textContent = `Đã xếp: ${currentRank} / ${totalCount}`;
+        counterText.textContent = `Đã chọn: ${currentRank} / ${totalToPick}`;
 
         currentRank++;
 
         await new Promise(r => setTimeout(r, 550));
         if (slot) slot.classList.remove("active-just-in");
 
-        if (currentRank > totalCount) {
+        // Khi đã đủ số lượng cần chọn
+        if (currentRank > totalToPick) {
           finishAll();
           return;
         }
@@ -1046,6 +1099,7 @@
       resumeBtn.style.display = "none";
       resetBtn.disabled = false;
       applyBtn.disabled = false;
+      pickCountInput.disabled = false;
 
       playGrandVictoryCelebration();
     }
@@ -1058,6 +1112,7 @@
       pauseBtn.disabled = false;
       resetBtn.disabled = true;
       applyBtn.disabled = true;
+      pickCountInput.disabled = true;
       playBGM();
       runLoop();
     });
@@ -1097,14 +1152,17 @@
       resumeBtn.style.display = "none";
       resetBtn.disabled = true;
       applyBtn.disabled = false;
+      pickCountInput.disabled = false;
 
-      counterText.textContent = `Đã xếp: 0 / ${baseItems.length}`;
       initSlots();
+      counterText.textContent = `Đã chọn: 0 / ${totalToPick}`;
       drawWheel();
     }
 
     resetBtn.addEventListener("click", resetAll);
 
+    // Khởi chạy ban đầu
+    totalToPick = parseInt(pickCountInput.value) || DEFAULT_ITEMS.length;
     initSlots();
     drawWheel();
   </script>
